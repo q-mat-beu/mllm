@@ -1,0 +1,45 @@
+# CMake build artifacts
+/build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Executables and object files
+*.o
+*.obj
+*.exe
+*.out
+*.app
+*.dSYM
+mllm
+mllm_tests
+
+# Dependency download directories (FetchContent)
+_deps/
+
+# Metal artifacts
+*.metallib
+*.air
+
+# Python virtual environment
+.venv/
+
+# Editor-specific files
+.vscode/
+.idea/
+*.swp
+*~
+
+# macOS specific files
+.DS_Store
+
+# Log files
+*.log
+
+# Resource files that are downloaded or generated
+# Keep vocab.json and merges.txt if they are part of the repo
+# If gpt2_weights.json is generated from pytorch_model.bin, then ignore it.
+# If pytorch_model.bin is downloaded, ignore it.
+resources/gpt2_weights.json
+resources/pytorch_model.bin
