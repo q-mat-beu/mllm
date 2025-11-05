@@ -4,8 +4,10 @@
 #include <stdexcept>
 #include <memory>
 #include <numeric>
+#ifdef ENABLE_PROFILING
 #include <chrono>
 #include <iostream>
+#endif
 
 GPT2Model::GPT2Model(
     Backend* backend,
@@ -89,53 +91,81 @@ std::unique_ptr<Tensor> GPT2Model::forward(const Tensor* input_token_ids) {
         throw std::runtime_error("Input token IDs must be an integer tensor.");
     }
 
+#ifdef ENABLE_PROFILING
     auto total_start = std::chrono::high_resolution_clock::now();
+#endif
 
     auto input_shape = input_token_ids->get_shape();
     int batch_size = input_shape[0];
     int seq_len = input_shape[1];
 
+#ifdef ENABLE_PROFILING
     auto step_start = std::chrono::high_resolution_clock::now();
+#endif
     auto token_embeds = token_embeddings->forward(input_token_ids);
+#ifdef ENABLE_PROFILING
     auto step_end = std::chrono::high_resolution_clock::now();
     std::cout << "Token Embeddings took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
 
+#ifdef ENABLE_PROFILING
     step_start = std::chrono::high_resolution_clock::now();
+#endif
     std::vector<int> position_ids_data(seq_len);
     std::iota(position_ids_data.begin(), position_ids_data.end(), 0);
     auto position_ids = backend->create_tensor({seq_len}, MLLM_INT32);
     position_ids->allocate();
     position_ids->copy_from_int(position_ids_data);
     auto position_embeds = position_embeddings->forward(position_ids.get());
+#ifdef ENABLE_PROFILING
     step_end = std::chrono::high_resolution_clock::now();
     std::cout << "Positional Embeddings took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
 
+#ifdef ENABLE_PROFILING
     step_start = std::chrono::high_resolution_clock::now();
+#endif
     auto hidden_states = backend->create_tensor(token_embeds->get_shape(), MLLM_FLOAT32);
     hidden_states->allocate();
     backend->add(token_embeds.get(), position_embeds.get(), hidden_states.get());
+#ifdef ENABLE_PROFILING
     step_end = std::chrono::high_resolution_clock::now();
     std::cout << "Add Embeddings took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
 
     for (int i = 0; i < num_layers; ++i) {
+#ifdef ENABLE_PROFILING
         step_start = std::chrono::high_resolution_clock::now();
+#endif
         hidden_states = transformer_blocks[i]->forward(hidden_states.get());
+#ifdef ENABLE_PROFILING
         step_end = std::chrono::high_resolution_clock::now();
         std::cout << "Transformer Block " << i << " took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
     }
 
+#ifdef ENABLE_PROFILING
     step_start = std::chrono::high_resolution_clock::now();
+#endif
     auto ln_f_output = ln_f->forward(hidden_states.get());
+#ifdef ENABLE_PROFILING
     step_end = std::chrono::high_resolution_clock::now();
     std::cout << "Final LayerNorm took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
 
+#ifdef ENABLE_PROFILING
     step_start = std::chrono::high_resolution_clock::now();
+#endif
     auto logits = lm_head->forward(ln_f_output.get());
+#ifdef ENABLE_PROFILING
     step_end = std::chrono::high_resolution_clock::now();
     std::cout << "Language Model Head took: " << std::chrono::duration<double>(step_end - step_start).count() << " s" << std::endl;
+#endif
 
+#ifdef ENABLE_PROFILING
     auto total_end = std::chrono::high_resolution_clock::now();
-    std::cout << "Total forward pass took: " << std::chrono::duration<double>(total_end - total_start).count() << " s" << std::endl;
+    std.cout << "Total forward pass took: " << std::chrono::duration<double>(total_end - total_start).count() << " s" << std::endl;
+#endif
 
     return logits;
 }
